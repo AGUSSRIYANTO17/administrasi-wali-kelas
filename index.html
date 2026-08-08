@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Online Wali Kelas</title>
+  <!-- Tempel URL deployment Google Apps Script yang berakhiran /exec pada content di bawah ini. -->
+  <meta name="apps-script-api-url" content="https://script.google.com/macros/s/AKfycbxE0cYKj6V1tumZoJWpvFY2hoBPJeDNB4I-p1NHDfJsYoxjdKvsB9Ecgwf8ZaMPfZCHMA/exec">
+  <style>
+    :root {
+      --primary: #194d8f;
+      --primary-dark: #123a6d;
+      --primary-soft: #eaf2ff;
+      --surface: #ffffff;
+      --background: #f4f7fb;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #dbe3ef;
+      --success: #16a34a;
+      --info: #2563eb;
+      --warning: #d6a300;
+      --danger: #dc2626;
+      --purple: #7c3aed;
+      --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--background);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .hidden { display: none !important; }
+
+    .app-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 6px 20px rgba(18, 58, 109, 0.18);
+    }
+    .nav-inner {
+      width: min(1180px, calc(100% - 28px));
+      min-height: 64px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      text-decoration: none;
+      min-width: 190px;
+    }
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.82);
+      border: 0;
+      background: transparent;
+      padding: 9px 11px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 650;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.13);
+    }
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .user-chip {
+      text-align: right;
+      font-size: 0.82rem;
+      line-height: 1.25;
+    }
+    .user-chip strong { display: block; }
+    .user-chip span { color: rgba(255,255,255,.72); }
+    .nav-toggle {
+      display: none;
+      margin-left: auto;
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 11px;
+      color: #fff;
+      background: rgba(255,255,255,.14);
+      font-size: 1.25rem;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 52px;
+    }
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .page-header h1 { margin: 0 0 4px; font-size: clamp(1.55rem, 3vw, 2rem); }
+    .page-header p { margin: 0; color: var(--muted); }
+    .page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .grid { display: grid; gap: 18px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(219, 227, 239, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card-body { padding: 20px; }
+    .card-title { margin: 0 0 4px; font-size: 1.08rem; }
+    .card-subtitle { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .summary-card {
+      min-height: 112px;
+      padding: 18px;
+      border-left: 6px solid;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .summary-card span { color: var(--muted); font-weight: 650; }
+    .summary-card strong { font-size: 2rem; line-height: 1; }
+    .status-h { border-color: var(--success); }
+    .status-i { border-color: var(--info); }
+    .status-s { border-color: #eab308; }
+    .status-a { border-color: var(--danger); }
+    .status-week { border-color: var(--purple); }
+
+    .quick-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 105px;
+      padding: 18px;
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .quick-card:hover, .class-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(15,23,42,.12); }
+    .quick-card strong { color: #1e3a5f; }
+    .quick-card span { color: var(--muted); font-size: .88rem; }
+    .quick-icon { font-size: 1.45rem; margin-bottom: 4px; }
+
+    .class-card {
+      padding: 20px;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .class-card-top { display: flex; justify-content: space-between; gap: 12px; }
+    .class-card h3 { margin: 3px 0 8px; font-size: 1.35rem; }
+    .class-meta { color: var(--muted); font-size: .9rem; }
+    .student-count {
+      height: fit-content;
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: #1d4ed8;
+      background: #dbeafe;
+      font-size: .8rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .class-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+
+    .btn {
+      min-height: 40px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-weight: 700;
+      font-size: .9rem;
+      text-decoration: none;
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { cursor: not-allowed; opacity: .6; transform: none; }
+    .btn-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+    .btn-secondary { color: #334155; background: #f1f5f9; border-color: #dbe3ef; }
+    .btn-success { color: #fff; background: var(--success); border-color: var(--success); }
+    .btn-danger { color: #fff; background: var(--danger); border-color: var(--danger); }
+    .btn-warning { color: #4a3500; background: #facc15; border-color: #eab308; }
+    .btn-outline { color: var(--primary); background: #fff; border-color: #a9bfdd; }
+    .btn-outline-success { color: #15803d; background: #fff; border-color: #86d09e; }
+    .btn-outline-danger { color: #b91c1c; background: #fff; border-color: #f0a0a0; }
+    .btn-sm { min-height: 34px; padding: 6px 10px; font-size: .82rem; border-radius: 8px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+    .col-2 { grid-column: span 2; }
+    .col-1 { grid-column: span 1; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-weight: 700; font-size: .88rem; color: #334155; }
+    .form-control, .form-select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 9px 11px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+    }
+    textarea.form-control { resize: vertical; min-height: 90px; }
+    .form-control:focus, .form-select:focus {
+      border-color: #5c8fd0;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+    .form-hint { color: var(--muted); font-size: .8rem; }
+    .inline-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+    .inline-form > .form-group { min-width: 180px; flex: 1; }
+
+    .table-card { overflow: hidden; }
+    .table-scroll { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: 12px 13px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+    th { background: #edf2f8; color: #334155; white-space: nowrap; font-size: .85rem; }
+    td { font-size: .9rem; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fafcff; }
+    .actions-cell { display: flex; flex-wrap: wrap; gap: 6px; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .nowrap { white-space: nowrap; }
+    .muted { color: var(--muted); }
+    .fw-bold { font-weight: 800; }
+
+    .all-recap-filter-card { overflow: visible; }
+    .all-recap-show { display:flex; align-items:flex-end; }
+    .all-recap-show .btn { width:100%; min-height:42px; white-space:nowrap; }
+    .all-recap-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+    .all-recap-scroll { max-width:100%; }
+    .all-recap-table { min-width:max-content; }
+    .all-recap-table th, .all-recap-table td { padding:10px 11px; }
+    .all-recap-table th:nth-child(1), .all-recap-table td:nth-child(1) { width:54px; }
+    .all-recap-table th:nth-child(2), .all-recap-table td:nth-child(2) { min-width:135px; }
+    .all-recap-table th:nth-child(3), .all-recap-table td:nth-child(3) { min-width:190px; }
+    .all-recap-day { min-width:72px; line-height:1.25; }
+    .all-recap-day small { color:#64748b; font-size:.72rem; }
+    .all-recap-number { min-width:64px; }
+    .all-recap-total td { background:#eaf2fb; border-top:1px solid #cbd5e1; }
+    .all-recap-percent { color:#16a34a; white-space:nowrap; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 800;
+    }
+    .badge-admin { color: #5b21b6; background: #ede9fe; }
+    .badge-teacher { color: #1d4ed8; background: #dbeafe; }
+    .badge-h { color: #166534; background: #dcfce7; }
+    .badge-i { color: #1d4ed8; background: #dbeafe; }
+    .badge-s { color: #854d0e; background: #fef9c3; }
+    .badge-a { color: #991b1b; background: #fee2e2; }
+    .badge-empty { color: #64748b; background: #f1f5f9; }
+
+    .status-options { display: flex; gap: 5px; min-width: 300px; }
+    .status-options input { position: absolute; opacity: 0; pointer-events: none; }
+    .status-label {
+      min-width: 66px;
+      padding: 7px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      text-align: center;
+      background: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .14s ease;
+    }
+    .status-label small { display: block; font-size: .66rem; font-weight: 650; }
+    .status-options input[value="H"]:checked + .status-label { color:#fff; background:var(--success); border-color:var(--success); }
+    .status-options input[value="I"]:checked + .status-label { color:#fff; background:var(--info); border-color:var(--info); }
+    .status-options input[value="S"]:checked + .status-label { color:#2b2500; background:#facc15; border-color:#eab308; }
+    .status-options input[value="A"]:checked + .status-label { color:#fff; background:var(--danger); border-color:var(--danger); }
+
+    .report-status {
+      display: inline-grid;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      border-radius: 50%;
+      font-size: .78rem;
+      font-weight: 900;
+    }
+
+    .empty-state {
+      text-align: center;
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius);
+      padding: 40px 22px;
+      color: var(--muted);
+      background: #fff;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.16), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(15,118,110,.16), transparent 40%),
+        var(--background);
+    }
+    .login-card { width: min(100%, 460px); padding: 30px; }
+    .login-icon {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      color: #fff;
+      font-size: 2.1rem;
+      background: linear-gradient(135deg, #2563eb, #0f766e);
+    }
+    .login-title { text-align: center; margin: 16px 0 3px; }
+    .login-subtitle { text-align: center; color: var(--muted); margin: 0 0 22px; }
+    .demo-box {
+      margin-top: 18px;
+      border-radius: 12px;
+      padding: 13px;
+      background: #eef4ff;
+      color: #334155;
+      font-size: .85rem;
+    }
+    .api-box {
+      margin-top: 14px;
+      border: 1px solid #dbe3ef;
+      border-radius: 12px;
+      padding: 13px;
+      background: #fff;
+      color: #334155;
+      font-size: .84rem;
+    }
+    .api-box-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .api-status { display:inline-flex; align-items:center; gap:7px; font-weight:750; }
+    .api-dot { width:9px; height:9px; border-radius:50%; background:#94a3b8; }
+    .api-dot.ok { background:#16a34a; }
+    .api-dot.error { background:#dc2626; }
+    .api-url-text { margin-top:7px; color:var(--muted); overflow-wrap:anywhere; }
+    .transport-frame { position:fixed; width:1px; height:1px; border:0; opacity:0; pointer-events:none; }
+
+    .toast-stack { position: fixed; top: 78px; right: 16px; z-index: 120; display: grid; gap: 10px; width: min(380px, calc(100% - 32px)); }
+    .toast {
+      padding: 13px 15px;
+      border-radius: 12px;
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(15,23,42,.2);
+      animation: toastIn .22s ease;
+    }
+    .toast-success { background: #15803d; }
+    .toast-error { background: #b91c1c; }
+    .toast-info { background: #1d4ed8; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      display: grid;
+      place-items: center;
+      background: rgba(244,247,251,.76);
+      backdrop-filter: blur(3px);
+    }
+    .loader-box {
+      min-width: 170px;
+      padding: 22px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      text-align: center;
+      font-weight: 750;
+      color: #334155;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 10px;
+      border: 4px solid #dbeafe;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(15,23,42,.5);
+    }
+    .modal {
+      width: min(620px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(15,23,42,.3);
+    }
+    .modal-head, .modal-foot { padding: 16px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .modal-head { border-bottom:1px solid #e5e7eb; }
+    .modal-head h2 { margin:0; font-size:1.18rem; }
+    .modal-body { padding:20px; }
+    .modal-foot { border-top:1px solid #e5e7eb; justify-content:flex-end; }
+    .icon-button { width:36px; height:36px; border:0; border-radius:10px; background:#f1f5f9; font-size:1.2rem; }
+
+    .callout {
+      padding: 16px 18px;
+      border-radius: 14px;
+      border-left: 5px solid var(--primary);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .callout-success { border-left-color: var(--success); }
+    .section-title { margin: 28px 0 14px; font-size: 1.12rem; }
+
+    @media (max-width: 980px) {
+      .grid-5 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .grid-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .grid-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .nav-toggle { display: grid; place-items: center; }
+      .nav-inner { flex-wrap: wrap; padding: 10px 0; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        order: 3;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 6px 0 10px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-link { width: 100%; text-align: left; }
+      .user-menu { margin-left: auto; }
+    }
+    @media (max-width: 720px) {
+      .page-header { flex-direction: column; }
+      .page-actions { width: 100%; }
+      .page-actions .btn { flex: 1; }
+      .grid-5, .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .col-8, .col-6, .col-4, .col-3, .col-2, .col-1 { grid-column: span 12; }
+      .user-chip { display: none; }
+      .status-options { min-width: 270px; }
+      .status-label { min-width: 58px; padding-inline: 6px; }
+    }
+    @media (max-width: 460px) {
+      .page-shell, .nav-inner { width: min(100% - 20px, 1180px); }
+      .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .summary-card { min-height: 96px; padding: 14px; }
+      .summary-card strong { font-size: 1.6rem; }
+      .login-card { padding: 22px; }
+    }
+    @media print {
+      .app-nav, .page-actions, form, .btn, .toast-stack, .loading-overlay, .modal-backdrop { display:none !important; }
+      body { background:#fff; }
+      .page-shell { width:100%; padding:0; }
+      .card { box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="toastStack" class="toast-stack"></div>
+  <div id="loading" class="loading-overlay hidden">
+    <div class="loader-box"><div class="spinner"></div><div id="loadingText">Memuat data...</div></div>
+  </div>
+  <div id="modalRoot"></div>
+
+  <script>
+    'use strict';
+
+    const state = {
+      token: localStorage.getItem('absensi_gas_token') || '',
+      user: null,
+      settings: {},
+      today: '',
+      currentWeek: '',
+      currentMonth: '',
+      viewData: null,
+      reportData: null,
+      initialDashboard: null,
+      initialDashboardExpires: 0,
+      apiCache: new Map()
+    };
+
+    const STATUS_NAMES = { H: 'Hadir', I: 'Izin', S: 'Sakit', A: 'Alpa' };
+
+    // URL backend dibaca langsung dari meta tag apps-script-api-url di bagian <head>.
+    // Tidak ada lagi tombol Atur Backend dan tidak memakai localStorage untuk URL backend.
+    const API_MESSAGE_SOURCE = 'absensi-gas-api';
+    const API_TIMEOUT_MS = 60000;
+    const XLSX_LIBRARY_URL = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    const API_CACHE_TTL = {
+      dashboard: 20000,
+      'classes.list': 30000,
+      'users.list': 15000,
+      'students.list': 20000,
+      'attendance.get': 10000,
+      'settings.get': 30000,
+      'profile.get': 30000
+    };
+    const pendingApiRequests = new Map();
+    let xlsxLoadPromise = null;
+    let backendCheckTimer = null;
+
+    window.addEventListener('message', handleApiMessage);
+
+    document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('hashchange', function () {
+      if (state.user) renderRoute();
+    });
+    document.addEventListener('click', handleGlobalClick);
+
+    async function init() {
+      if (!state.token) {
+        renderLogin();
+        return;
+      }
+      try {
+        setLoading(true, 'Memeriksa sesi...');
+        const data = await callServer('bootstrap', {});
+        applyBootstrap(data);
+        renderShell();
+        await renderRoute();
+      } catch (error) {
+        clearSession();
+        renderLogin();
+        toast(error.message || 'Sesi berakhir.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function applyBootstrap(data) {
+      state.user = data.user;
+      state.settings = data.settings || {};
+      state.today = data.today;
+      state.currentWeek = data.currentWeek;
+      state.currentMonth = data.currentMonth;
+      state.initialDashboard = data.dashboard || null;
+      state.initialDashboardExpires = data.dashboard ? Date.now() + API_CACHE_TTL.dashboard : 0;
+      if (data.dashboard) cacheApiData('dashboard', {}, data.dashboard, API_CACHE_TTL.dashboard);
+    }
+
+    function callServer(action, payload, options) {
+      const apiUrl = getApiUrl();
+      if (!apiUrl) {
+        return Promise.reject(new Error('URL Web App belum diisi atau tidak valid. Tempel alamat deployment Apps Script yang berakhiran /exec pada meta apps-script-api-url di index.html.'));
+      }
+
+      const requestPayload = payload || {};
+      const settings = options || {};
+      const ttl = API_CACHE_TTL[action] || 0;
+      const cacheKey = apiCacheKey(action, requestPayload);
+      if (ttl && !settings.force) {
+        const cached = state.apiCache.get(cacheKey);
+        if (cached && cached.data && cached.expires > Date.now()) {
+          return Promise.resolve(cached.data);
+        }
+        if (cached && cached.promise) return cached.promise;
+      }
+
+      const requestPromise = callExternalApi(apiUrl, {
+        action: action,
+        token: state.token,
+        payload: requestPayload
+      }).then(function (response) {
+        if (!response || response.ok !== true) {
+          const message = response && response.message ? response.message : 'Respons server tidak valid.';
+          if (/Sesi|masuk kembali/i.test(message)) {
+            clearSession();
+            renderLogin();
+          }
+          throw new Error(message);
+        }
+
+        const data = response.data || {};
+        if (ttl) {
+          cacheApiData(action, requestPayload, data, ttl);
+        } else if (!['ping', 'login', 'logout', 'bootstrap'].includes(action)) {
+          clearApiCache();
+        }
+        return data;
+      }).catch(function (error) {
+        if (ttl) state.apiCache.delete(cacheKey);
+        throw error;
+      });
+
+      if (ttl) {
+        state.apiCache.set(cacheKey, { promise: requestPromise, expires: Date.now() + ttl });
+      }
+      return requestPromise;
+    }
+
+    function apiCacheKey(action, payload) {
+      return action + '|' + JSON.stringify(payload || {});
+    }
+
+    function cacheApiData(action, payload, data, ttl) {
+      state.apiCache.set(apiCacheKey(action, payload), {
+        data: data,
+        expires: Date.now() + (ttl || API_CACHE_TTL[action] || 0)
+      });
+    }
+
+    function clearApiCache() {
+      state.apiCache.clear();
+      state.initialDashboard = null;
+      state.initialDashboardExpires = 0;
+    }
+
+    function getApiUrl() {
+      const meta = document.querySelector('meta[name="apps-script-api-url"]');
+      return normalizeApiUrl(meta ? meta.getAttribute('content') : '');
+    }
+
+    function normalizeApiUrl(value) {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      try {
+        const url = new URL(text);
+        if (url.protocol !== 'https:' || url.hostname !== 'script.google.com') return '';
+        if (!/\/macros\/s\/[^/]+\/exec$/.test(url.pathname)) return '';
+        url.search = '';
+        url.hash = '';
+        return url.toString().replace(/\/$/, '');
+      } catch (ignore) {
+        return '';
+      }
+    }
+
+
+    async function testBackendConnection() {
+      const apiUrl = getApiUrl();
+      updateApiStatus('checking', 'Memeriksa koneksi...');
+      if (!apiUrl) {
+        updateApiStatus('error', 'URL backend belum diisi di index.html');
+        return;
+      }
+      try {
+        const response = await callExternalApi(apiUrl, { action: 'ping', token: '', payload: {} });
+        if (!response || response.ok !== true) throw new Error(response && response.message ? response.message : 'Respons tidak valid.');
+        updateApiStatus('ok', 'Backend terhubung');
+      } catch (error) {
+        updateApiStatus('error', error.message || 'Backend tidak dapat dihubungi');
+      }
+    }
+
+    function updateApiStatus(status, text) {
+      const dot = document.getElementById('apiStatusDot');
+      const label = document.getElementById('apiStatusText');
+      if (dot) dot.className = 'api-dot' + (status === 'ok' ? ' ok' : status === 'error' ? ' error' : '');
+      if (label) label.textContent = text || '';
+    }
+
+    function callExternalApi(apiUrl, request) {
+      return new Promise(function (resolve, reject) {
+        const frontendOrigin = window.location.origin;
+        if (!frontendOrigin || frontendOrigin === 'null') {
+          reject(new Error('Buka index.html melalui hosting web/HTTPS atau server lokal, bukan langsung dengan file://.'));
+          return;
+        }
+
+        const requestId = 'req_' + Date.now() + '_' + randomToken(16);
+        const callbackToken = randomToken(32);
+        const frameName = 'gas_transport_' + requestId.replace(/[^a-zA-Z0-9_]/g, '_');
+        const iframe = document.createElement('iframe');
+        iframe.name = frameName;
+        iframe.className = 'transport-frame';
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.referrerPolicy = 'no-referrer';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.acceptCharset = 'UTF-8';
+        form.action = apiUrl;
+        form.target = frameName;
+        form.style.display = 'none';
+
+        appendHiddenField(form, 'request_id', requestId);
+        appendHiddenField(form, 'callback_token', callbackToken);
+        appendHiddenField(form, 'origin', frontendOrigin);
+        appendHiddenField(form, 'request', JSON.stringify(request));
+
+        const timeoutId = window.setTimeout(function () {
+          cleanupApiRequest(requestId);
+          reject(new Error('Backend tidak mengirim respons. Deploy Code.gs sebagai versi baru, pilih Execute as: Me dan Who has access: Anyone, lalu pastikan URL di index.html berakhiran /exec.'));
+        }, API_TIMEOUT_MS);
+
+        pendingApiRequests.set(requestId, {
+          resolve: resolve,
+          reject: reject,
+          timeoutId: timeoutId,
+          iframe: iframe,
+          form: form,
+          callbackToken: callbackToken
+        });
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+        form.submit();
+      });
+    }
+
+    function randomToken(byteLength) {
+      const bytes = new Uint8Array(byteLength || 16);
+      if (window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(bytes);
+        return Array.from(bytes, function (value) {
+          return value.toString(16).padStart(2, '0');
+        }).join('');
+      }
+      return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    }
+
+    function appendHiddenField(form, name, value) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
+
+    function handleApiMessage(event) {
+      let host = '';
+      try { host = new URL(event.origin).hostname; } catch (ignore) { return; }
+      const trustedGoogleOrigin = host === 'script.google.com' ||
+        host === 'script.googleusercontent.com' ||
+        host.endsWith('.googleusercontent.com');
+      if (!trustedGoogleOrigin) return;
+
+      const message = event.data;
+      if (!message || message.source !== API_MESSAGE_SOURCE || !message.requestId) return;
+      const pending = pendingApiRequests.get(message.requestId);
+      if (!pending) return;
+
+      // Apps Script HtmlService memakai sandbox IFRAME bertingkat. Sumber pesan
+      // dapat berasal dari iframe sandbox Google, bukan iframe transport terluar.
+      // Verifikasi dilakukan memakai origin Google + requestId + callbackToken.
+      if (!message.callbackToken || message.callbackToken !== pending.callbackToken) return;
+
+      cleanupApiRequest(message.requestId);
+      pending.resolve(message.response);
+    }
+
+    function cleanupApiRequest(requestId) {
+      const pending = pendingApiRequests.get(requestId);
+      if (!pending) return;
+      window.clearTimeout(pending.timeoutId);
+      pendingApiRequests.delete(requestId);
+      if (pending.form && pending.form.parentNode) pending.form.remove();
+      if (pending.iframe && pending.iframe.parentNode) pending.iframe.remove();
+    }
+
+    function clearSession() {
+      localStorage.removeItem('absensi_gas_token');
+      state.token = '';
+      state.user = null;
+      state.viewData = null;
+      state.reportData = null;
+      clearApiCache();
+      if (backendCheckTimer) {
+        window.clearTimeout(backendCheckTimer);
+        backendCheckTimer = null;
+      }
+    }
+
+    function renderLogin() {
+      document.getElementById('root').innerHTML = `
+        <main class="login-page">
+          <section class="card login-card">
+            <div class="login-icon">✓</div>
+            <h1 class="login-title">Absensi Online</h1>
+            <p class="login-subtitle">Wali Kelas & Administrator Sekolah</p>
+            <form id="loginForm">
+              <div class="form-group" style="margin-bottom:14px">
+                <label class="form-label" for="loginUsername">Username</label>
+                <input class="form-control" id="loginUsername" name="username" autocomplete="username" required autofocus>
+              </div>
+              <div class="form-group" style="margin-bottom:18px">
+                <label class="form-label" for="loginPassword">Kata sandi</label>
+                <input class="form-control" id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+              </div>
+              <button class="btn btn-primary" style="width:100%" type="submit">Masuk ke Aplikasi</button>
+            </form>
+            
+            <div class="api-box">
+              <div class="api-box-head">
+                <span class="api-status"><span class="api-dot" id="apiStatusDot"></span><span id="apiStatusText">Memeriksa koneksi server...</span></span>
+              </div>
+            </div>
+          </section>
+        </main>`;
+
+      backendCheckTimer = window.setTimeout(function () {
+        backendCheckTimer = null;
+        testBackendConnection();
+      }, 1200);
+
+      document.getElementById('loginForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (backendCheckTimer) {
+          window.clearTimeout(backendCheckTimer);
+          backendCheckTimer = null;
+        }
+        const form = new FormData(event.currentTarget);
+        try {
+          setLoading(true, 'Memproses login...');
+          const data = await callServer('login', {
+            username: form.get('username'),
+            password: form.get('password')
+          });
+          state.token = data.token;
+          localStorage.setItem('absensi_gas_token', state.token);
+          if (data.bootstrap) {
+            applyBootstrap(data.bootstrap);
+          } else {
+            state.user = data.user;
+            state.settings = data.settings || {};
+            applyBootstrap(await callServer('bootstrap', {}));
+          }
+          renderShell();
+          location.hash = '#dashboard';
+          await renderRoute();
+          toast(data.message, 'success');
+        } catch (error) {
+          toast(error.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      });
+    }
+
+    function renderShell() {
+      const schoolName = escapeHtml(state.settings.school_name || 'ABSENSI SEKOLAH');
+      const adminLinks = state.user.role === 'admin' ? `
+        <a class="nav-link" href="#users" data-route="users">Pengguna</a>
+        <a class="nav-link" href="#settings" data-route="settings">Pengaturan</a>` : '';
+      document.getElementById('root').innerHTML = `
+        <nav class="app-nav">
+          <div class="nav-inner">
+            <a class="brand" href="#dashboard" data-route="dashboard">
+              <span class="brand-mark">✓</span>
+              <span id="brandName">${schoolName}</span>
+            </a>
+            <button class="nav-toggle" type="button" data-action="toggle-nav" aria-label="Buka menu">☰</button>
+            <div class="nav-links" id="navLinks">
+              <a class="nav-link" href="#dashboard" data-route="dashboard">Dashboard</a>
+              <a class="nav-link" href="#classes" data-route="classes">Kelas & Siswa</a>
+              <a class="nav-link" href="#attendance" data-route="attendance">Absensi</a>
+              <a class="nav-link" href="#history" data-route="history">Riwayat</a>
+              <a class="nav-link" href="#reports" data-route="reports">Laporan</a>
+              ${adminLinks}
+            </div>
+            <div class="user-menu">
+              <div class="user-chip"><strong>${escapeHtml(state.user.full_name)}</strong><span>${state.user.role === 'admin' ? 'Administrator' : 'Wali Kelas'}</span></div>
+              <button class="btn btn-sm btn-secondary" data-route="profile">Profil</button>
+              <button class="btn btn-sm btn-outline-danger" style="background:#fff" data-action="logout">Keluar</button>
+            </div>
+          </div>
+        </nav>
+        <main class="page-shell" id="page"></main>`;
+    }
+
+    async function renderRoute() {
+      if (!state.user) return;
+      const route = parseRoute();
+      closeMobileNav();
+      setActiveNav(route.name);
+      try {
+        setLoading(true);
+        switch (route.name) {
+          case 'classes': await renderClasses(); break;
+          case 'users': await renderUsers(); break;
+          case 'students': await renderStudents(route.params.classId); break;
+          case 'attendance': await renderAttendance(route.params.classId, route.params.date); break;
+          case 'reports': await renderReports(route.params); break;
+          case 'all-reports': await renderAllReports(route.params); break;
+          case 'history': await renderHistory(route.params); break;
+          case 'settings': await renderSettings(); break;
+          case 'profile': await renderProfile(); break;
+          default: await renderDashboard();
+        }
+      } catch (error) {
+        renderError(error.message);
+        toast(error.message, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function parseRoute() {
+      const raw = (location.hash || '#dashboard').slice(1);
+      const parts = raw.split('?');
+      const name = parts[0] || 'dashboard';
+      const params = {};
+      new URLSearchParams(parts[1] || '').forEach(function (value, key) { params[key] = value; });
+      return { name: name, params: params };
+    }
+
+    function navigate(name, params) {
+      const search = new URLSearchParams(params || {}).toString();
+      location.hash = '#' + name + (search ? '?' + search : '');
+    }
+
+    function setActiveNav(routeName) {
+      document.querySelectorAll('.nav-link').forEach(function (link) {
+        const route = link.dataset.route;
+        const active = route === routeName || (route === 'reports' && routeName === 'all-reports');
+        link.classList.toggle('active', active);
+      });
+    }
+
+    function page() { return document.getElementById('page'); }
+
+    async function renderDashboard() {
+      const initialData = state.initialDashboard && state.initialDashboardExpires > Date.now()
+        ? state.initialDashboard
+        : null;
+      state.initialDashboard = null;
+      state.initialDashboardExpires = 0;
+      const data = initialData || await callServer('dashboard', {});
+      state.viewData = data;
+      const classesHtml = data.classes.length ? data.classes.map(classCardHtml).join('') : emptyHtml('Belum ada kelas yang dapat dikelola.');
+      page().innerHTML = `
+        ${pageHeader('Dashboard Absensi', 'Ringkasan kehadiran tanggal ' + formatDate(data.today), state.user.role === 'admin' ? `
+          <button class="btn btn-outline" data-route="users">Kelola Pengguna</button>
+          <button class="btn btn-primary" data-action="add-class">+ Tambah Kelas</button>` : '')}
+        <section class="grid grid-5 summary-grid">
+          ${summaryCard('Hadir Hari Ini', data.todaySummary.H, 'status-h')}
+          ${summaryCard('Izin Hari Ini', data.todaySummary.I, 'status-i')}
+          ${summaryCard('Sakit Hari Ini', data.todaySummary.S, 'status-s')}
+          ${summaryCard('Alpa Hari Ini', data.todaySummary.A, 'status-a')}
+          ${summaryCard('Entri Minggu Ini', data.weekEntries, 'status-week')}
+        </section>
+        <h2 class="section-title">Menu Cepat</h2>
+        <section class="grid grid-5">
+          ${quickCard('🕘', 'Riwayat', 'Cari data absensi', 'history')}
+          ${quickCard('📊', 'Laporan', 'Mingguan & bulanan', 'reports')}
+          ${quickCard('🏫', 'Semua Kelas', 'Rekap gabungan', 'all-reports')}
+          ${quickCard('👨‍🎓', 'Data Siswa', 'Kelola per kelas', 'classes')}
+          ${quickCard('👤', 'Profil', 'Akun pengguna', 'profile')}
+        </section>
+        <h2 class="section-title">Kelas yang Dikelola</h2>
+        <section class="grid grid-3">${classesHtml}</section>`;
+    }
+
+    async function renderClasses() {
+      const data = await callServer('classes.list', {});
+      state.viewData = data;
+      page().innerHTML = `
+        ${pageHeader('Daftar Kelas', 'Kelola kelas, wali kelas, siswa, dan absensi.', state.user.role === 'admin' ? '<button class="btn btn-primary" data-action="add-class">+ Tambah Kelas</button>' : '')}
+        <section class="grid grid-3">
+          ${data.classes.length ? data.classes.map(classCardHtml).join('') : emptyHtml('Belum ada data kelas.')}
+        </section>`;
+    }
+
+    function classCardHtml(item) {
+      const adminActions = state.user.role === 'admin' ? `
+        <button class="btn btn-sm btn-warning" data-action="edit-class" data-id="${item.id}">Edit</button>
+        <button class="btn btn-sm btn-outline-danger" data-action="delete-class" data-id="${item.id}">Hapus</button>` : '';
+      return `
+        <article class="card class-card">
+          <div class="class-card-top">
+            <div>
+              <div class="muted">Tahun Pelajaran ${escapeHtml(item.academic_year)}</div>
+              <h3>${escapeHtml(item.name)}</h3>
+            </div>
+            <span class="student-count">${item.student_count} siswa</span>
+          </div>
+          <div class="class-meta">Wali kelas: <strong>${escapeHtml(item.teacher_name || 'Belum ditentukan')}</strong></div>
+          <div class="class-actions">
+            <button class="btn btn-sm btn-outline" data-route="students" data-class-id="${item.id}">Siswa</button>
+            <button class="btn btn-sm btn-primary" data-route="attendance" data-class-id="${item.id}">Absensi</button>
+            <button class="btn btn-sm btn-outline-success" data-route="reports" data-class-id="${item.id}">Rekap</button>
+            ${adminActions}
+          </div>
+        </article>`;
+    }
+
+    function openClassModal(item) {
+      const data = state.viewData || { teachers: [] };
+      const editing = Boolean(item);
+      const teacherOptions = (data.teachers || []).map(function (teacher) {
+        const selected = item && item.homeroom_teacher_id === teacher.id ? 'selected' : '';
+        return `<option value="${teacher.id}" ${selected}>${escapeHtml(teacher.full_name)}</option>`;
+      }).join('');
+      showModal({
+        title: editing ? 'Edit Kelas' : 'Tambah Kelas',
+        submitText: editing ? 'Simpan Perubahan' : 'Tambah Kelas',
+        html: `
+          <div class="form-grid">
+            <div class="form-group col-6"><label class="form-label">Nama kelas</label><input class="form-control" name="name" value="${escapeAttr(item ? item.name : '')}" required></div>
+            <div class="form-group col-6"><label class="form-label">Tahun pelajaran</label><input class="form-control" name="academic_year" value="${escapeAttr(item ? item.academic_year : '2026/2027')}" required></div>
+            <div class="form-group col-12"><label class="form-label">Wali kelas</label><select class="form-select" name="teacher_id"><option value="">Belum ditentukan</option>${teacherOptions}</select></div>
+          </div>`,
+        onSubmit: async function (form) {
+          const values = formObject(form);
+          if (editing) values.id = item.id;
+          const result = await callServer(editing ? 'classes.update' : 'classes.add', values);
+          hideModal();
+          toast(result.message, 'success');
+          await renderClasses();
+        }
+      });
+    }
+
+    async function deleteClass(id) {
+      const item = (state.viewData.classes || []).find(function (row) { return row.id === id; });
+      if (!item || !confirm('Hapus kelas ' + item.name + ' beserta siswa dan data absensinya?')) return;
+      try {
+        setLoading(true, 'Menghapus kelas...');
+        const result = await callServer('classes.delete', { id: id });
+        toast(result.message, 'success');
+        await renderClasses();
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function renderUsers() {
+      if (state.user.role !== 'admin') throw new Error('Menu ini hanya untuk administrator.');
+      const data = await callServer('users.list', {});
+      state.viewData = data;
+      const rows = data.users.map(function (user) {
+        const canDelete = user.role === 'teacher' && user.id !== state.user.id;
+        return `<tr>
+          <td><strong>${escapeHtml(user.full_name)}</strong><div class="muted">@${escapeHtml(user.username)}</div></td>
+          <td><span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-teacher'}">${user.role === 'admin' ? 'Administrator' : 'Wali Kelas'}</span></td>
+          <td>${escapeHtml(user.assigned_classes || '-')}</td>
+          <td class="actions-cell">
+            <button class="btn btn-sm btn-warning" data-action="edit-user" data-id="${user.id}">Edit</button>
+            <button class="btn btn-sm btn-outline" data-action="user-password" data-id="${user.id}">Password</button>
+            ${canDelete ? `<button class="btn btn-sm btn-outline-danger" data-action="delete-user" data-id="${user.id}">Hapus</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('');
+      page().innerHTML = `
+        ${pageHeader('Pengguna dan Wali Kelas', 'Tambah akun, atur peran, dan import penugasan wali kelas.', '<button class="btn btn-success" data-action="download-teacher-template">Unduh Template</button>')}
+        <section class="grid grid-2" style="align-items:start">
+          <article class="card"><div class="card-body">
+            <h2 class="card-title">Tambah Pengguna</h2><p class="card-subtitle" style="margin-bottom:16px">Kata sandi minimal 6 karakter.</p>
+            <form id="addUserForm" class="form-grid">
+              <div class="form-group col-6"><label class="form-label">Nama lengkap</label><input class="form-control" name="full_name" required></div>
+              <div class="form-group col-6"><label class="form-label">Username</label><input class="form-control" name="username" required></div>
+              <div class="form-group col-6"><label class="form-label">Kata sandi</label><input class="form-control" type="password" name="password" minlength="6" required></div>
+              <div class="form-group col-6"><label class="form-label">Peran</label><select class="form-select" name="role"><option value="teacher">Wali Kelas</option><option value="admin">Administrator</option></select></div>
+              <div class="col-12"><button class="btn btn-primary" type="submit">Tambah Pengguna</button></div>
+            </form>
+          </div></article>
+          <article class="card"><div class="card-body">
+            <h2 class="card-title">Import Wali Kelas</h2><p class="card-subtitle" style="margin-bottom:16px">Mendukung file Excel (.xlsx) dan CSV.</p>
+            <div class="form-group"><label class="form-label">Pilih file</label><input class="form-control" type="file" id="teacherImportFile" accept=".xlsx,.xls,.csv"></div>
+            <div style="margin-top:14px"><button class="btn btn-success" data-action="import-teachers">Proses Import</button></div>
+            <p class="form-hint">Kolom: Nama Lengkap, Username, Password, Kelas, Tahun Pelajaran.</p>
+          </div></article>
+        </section>
+        <h2 class="section-title">Daftar Pengguna</h2>
+        <section class="card table-card"><div class="table-scroll"><table>
+          <thead><tr><th>Pengguna</th><th>Peran</th><th>Kelas yang Diampu</th><th>Aksi</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="4" class="text-center muted">Belum ada pengguna.</td></tr>'}</tbody>
+        </table></div></section>`;
+
+      document.getElementById('addUserForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          setLoading(true, 'Menambah pengguna...');
+          const result = await callServer('users.add', formObject(event.currentTarget));
+          toast(result.message, 'success');
+          await renderUsers();
+        } catch (error) { toast(error.message, 'error'); }
+        finally { setLoading(false); }
+      });
+    }
+
+    function openUserEditModal(user) {
+      showModal({
+        title: 'Edit Pengguna',
+        submitText: 'Simpan Perubahan',
+        html: `
+          <div class="form-grid">
+            <div class="form-group col-6"><label class="form-label">Nama lengkap</label><input class="form-control" name="full_name" value="${escapeAttr(user.full_name)}" required></div>
+            <div class="form-group col-6"><label class="form-label">Username</label><input class="form-control" name="username" value="${escapeAttr(user.username)}" required></div>
+            <div class="form-group col-12"><label class="form-label">Peran</label><select class="form-select" name="role" ${user.id === state.user.id ? 'disabled' : ''}><option value="teacher" ${user.role === 'teacher' ? 'selected' : ''}>Wali Kelas</option><option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrator</option></select>${user.id === state.user.id ? '<input type="hidden" name="role" value="admin">' : ''}</div>
+          </div>`,
+        onSubmit: async function (form) {
+          const values = formObject(form); values.id = user.id;
+          const result = await callServer('users.update', values);
+          hideModal(); toast(result.message, 'success'); await renderUsers();
+        }
+      });
+    }
+
+    function openPasswordModal(user) {
+      showModal({
+        title: 'Ganti Password — ' + user.full_name,
+        submitText: 'Ganti Password',
+        html: `<div class="form-group"><label class="form-label">Kata sandi baru</label><input class="form-control" name="password" type="password" minlength="6" required><span class="form-hint">Minimal 6 karakter.</span></div>`,
+        onSubmit: async function (form) {
+          const values = formObject(form); values.id = user.id;
+          const result = await callServer('users.password', values);
+          hideModal(); toast(result.message, 'success');
+        }
+      });
+    }
+
+    async function deleteUser(id) {
+      const user = state.viewData.users.find(function (row) { return row.id === id; });
+      if (!user || !confirm('Hapus akun wali kelas ' + user.full_name + '?')) return;
+      try {
+        setLoading(true, 'Menghapus pengguna...');
+        const result = await callServer('users.delete', { id: id });
+        toast(result.message, 'success');
+        await renderUsers();
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function importTeachers() {
+      const input = document.getElementById('teacherImportFile');
+      if (!input || !input.files[0]) { toast('Pilih file Excel atau CSV terlebih dahulu.', 'error'); return; }
+      try {
+        setLoading(true, 'Membaca dan mengimpor wali kelas...');
+        const rows = await parseTableFile(input.files[0]);
+        const result = await callServer('users.import', { rows: rows });
+        toast(result.message, 'success');
+        await renderUsers();
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function renderStudents(classId) {
+      if (!classId) {
+        const classes = await callServer('classes.list', {});
+        if (!classes.classes.length) { page().innerHTML = emptyHtml('Belum ada kelas.'); return; }
+        classId = classes.classes[0].id;
+      }
+      const data = await callServer('students.list', { class_id: classId });
+      state.viewData = data;
+      const rows = data.students.map(function (student, index) {
+        return `<tr><td>${index + 1}</td><td>${escapeHtml(student.nis)}</td><td><strong>${escapeHtml(student.name)}</strong></td><td><button class="btn btn-sm btn-outline-danger" data-action="deactivate-student" data-id="${student.id}">Nonaktifkan</button></td></tr>`;
+      }).join('');
+      page().innerHTML = `
+        ${pageHeader('Siswa ' + data.classRow.name, 'Tahun Pelajaran ' + data.classRow.academic_year + ' · Wali kelas: ' + (data.classRow.teacher_name || '-'), `
+          <button class="btn btn-primary" data-route="attendance" data-class-id="${data.classRow.id}">Isi Absensi</button>
+          <button class="btn btn-outline-success" data-route="reports" data-class-id="${data.classRow.id}">Laporan</button>`)}
+        <section class="grid grid-2" style="align-items:start">
+          <article class="card"><div class="card-body">
+            <h2 class="card-title">Tambah Siswa</h2>
+            <form id="addStudentForm" class="form-grid" style="margin-top:16px">
+              <input type="hidden" name="class_id" value="${data.classRow.id}">
+              <div class="form-group col-5"><label class="form-label">NIS/NISN</label><input class="form-control" name="nis" required></div>
+              <div class="form-group col-7"><label class="form-label">Nama siswa</label><input class="form-control" name="name" required></div>
+              <div class="col-12"><button class="btn btn-primary" type="submit">Tambah Siswa</button></div>
+            </form>
+          </div></article>
+          <article class="card"><div class="card-body">
+            <h2 class="card-title">Import Siswa</h2><p class="card-subtitle" style="margin-bottom:15px">Mendukung Excel (.xlsx) dan CSV.</p>
+            <input class="form-control" type="file" id="studentImportFile" accept=".xlsx,.xls,.csv">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+              <button class="btn btn-success" data-action="import-students">Proses Import</button>
+              <button class="btn btn-outline" data-action="download-student-template">Unduh Template</button>
+            </div>
+            <p class="form-hint">Kolom minimal: NIS dan Nama.</p>
+          </div></article>
+        </section>
+        <h2 class="section-title">Daftar Siswa Aktif (${data.students.length})</h2>
+        <section class="card table-card"><div class="table-scroll"><table>
+          <thead><tr><th>No.</th><th>NIS/NISN</th><th>Nama Siswa</th><th>Aksi</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="4" class="text-center muted">Belum ada siswa.</td></tr>'}</tbody>
+        </table></div></section>`;
+
+      document.getElementById('addStudentForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          setLoading(true, 'Menambah siswa...');
+          const result = await callServer('students.add', formObject(event.currentTarget));
+          toast(result.message, 'success');
+          await renderStudents(data.classRow.id);
+        } catch (error) { toast(error.message, 'error'); }
+        finally { setLoading(false); }
+      });
+    }
+
+    async function deactivateStudent(id) {
+      if (!confirm('Nonaktifkan siswa ini? Data absensi lama tetap tersimpan.')) return;
+      try {
+        setLoading(true, 'Menonaktifkan siswa...');
+        const result = await callServer('students.deactivate', { id: id });
+        toast(result.message, 'success');
+        await renderStudents(state.viewData.classRow.id);
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function importStudents() {
+      const input = document.getElementById('studentImportFile');
+      if (!input || !input.files[0]) { toast('Pilih file Excel atau CSV terlebih dahulu.', 'error'); return; }
+      try {
+        setLoading(true, 'Mengimpor data siswa...');
+        const rows = await parseTableFile(input.files[0]);
+        const result = await callServer('students.import', { class_id: state.viewData.classRow.id, rows: rows });
+        toast(result.message, 'success');
+        await renderStudents(state.viewData.classRow.id);
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function renderAttendance(classId, date) {
+      if (!classId) {
+        const list = await callServer('classes.list', {});
+        if (!list.classes.length) { page().innerHTML = emptyHtml('Belum ada kelas yang dapat diabsen.'); return; }
+        classId = list.classes[0].id;
+      }
+      const data = await callServer('attendance.get', { class_id: classId, date: date || state.today });
+      state.viewData = data;
+      const rows = data.students.map(function (student, index) {
+        return `<tr>
+          <td>${index + 1}</td><td>${escapeHtml(student.nis)}</td><td><strong>${escapeHtml(student.name)}</strong></td>
+          <td>${statusRadioHtml(student)}</td>
+          <td><input class="form-control attendance-note" data-student-id="${student.id}" value="${escapeAttr(student.note)}" placeholder="Catatan (opsional)"></td>
+        </tr>`;
+      }).join('');
+      page().innerHTML = `
+        ${pageHeader('Absensi ' + data.classRow.name, 'Tahun Pelajaran ' + data.classRow.academic_year, `
+          <button class="btn btn-outline-success" data-route="reports" data-class-id="${data.classRow.id}">Lihat Rekap</button>
+          <button class="btn btn-secondary" data-route="students" data-class-id="${data.classRow.id}">Data Siswa</button>`)}
+        <section class="card"><div class="card-body">
+          <form id="attendanceFilter" class="inline-form">
+            <div class="form-group"><label class="form-label">Tanggal absensi</label><input class="form-control" type="date" name="date" value="${data.date}" required></div>
+            <div style="display:flex;gap:8px"><button class="btn btn-primary" type="submit">Tampilkan</button><button class="btn btn-success" type="button" data-action="mark-all-present">Semua Hadir</button></div>
+          </form>
+        </div></section>
+        <form id="attendanceForm" style="margin-top:18px">
+          <section class="card table-card"><div class="table-scroll"><table>
+            <thead><tr><th>No.</th><th>NIS</th><th>Nama Siswa</th><th>Status</th><th style="min-width:220px">Catatan</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="5" class="text-center muted">Belum ada siswa aktif.</td></tr>'}</tbody>
+          </table></div></section>
+          ${data.students.length ? '<div style="margin-top:16px;text-align:right"><button class="btn btn-primary" type="submit">Simpan Absensi</button></div>' : ''}
+        </form>`;
+
+      document.getElementById('attendanceFilter').addEventListener('submit', function (event) {
+        event.preventDefault();
+        navigate('attendance', { classId: data.classRow.id, date: new FormData(event.currentTarget).get('date') });
+      });
+      document.getElementById('attendanceForm').addEventListener('submit', saveAttendance);
+    }
+
+    function statusRadioHtml(student) {
+      return `<div class="status-options">${['H','I','S','A'].map(function (status) {
+        return `<input id="status-${student.id}-${status}" type="radio" name="status_${student.id}" value="${status}" ${student.status === status ? 'checked' : ''}><label class="status-label" for="status-${student.id}-${status}">${status}<small>${STATUS_NAMES[status]}</small></label>`;
+      }).join('')}</div>`;
+    }
+
+    async function saveAttendance(event) {
+      event.preventDefault();
+      const records = state.viewData.students.map(function (student) {
+        const checked = document.querySelector('input[name="status_' + student.id + '"]:checked');
+        const note = document.querySelector('.attendance-note[data-student-id="' + student.id + '"]');
+        return { studentId: student.id, status: checked ? checked.value : '', note: note ? note.value : '' };
+      });
+      try {
+        setLoading(true, 'Menyimpan absensi...');
+        const result = await callServer('attendance.save', {
+          class_id: state.viewData.classRow.id,
+          date: state.viewData.date,
+          records: records
+        });
+
+        const byStudent = {};
+        records.forEach(function (record) { byStudent[record.studentId] = record; });
+        state.viewData.students.forEach(function (student) {
+          const record = byStudent[student.id];
+          if (!record || !record.status) return;
+          student.status = record.status;
+          student.note = record.note || '';
+        });
+        cacheApiData('attendance.get', {
+          class_id: state.viewData.classRow.id,
+          date: state.viewData.date
+        }, state.viewData, API_CACHE_TTL['attendance.get']);
+
+        toast(result.message, 'success');
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function renderReports(params) {
+      const data = await callServer('classes.list', {});
+      state.viewData = data;
+      if (!data.classes.length) { page().innerHTML = emptyHtml('Belum ada kelas untuk laporan.'); return; }
+      const selectedId = params.classId || data.classes[0].id;
+      page().innerHTML = `
+        ${pageHeader('Pusat Laporan', 'Rekap mingguan, bulanan, dan gabungan semua kelas.', '<button class="btn btn-success" data-route="all-reports">Rekap Semua Kelas</button>')}
+        <section class="card"><div class="card-body">
+          <div class="form-grid">
+            <div class="form-group col-4"><label class="form-label">Kelas</label><select class="form-select" id="reportClass">${classOptions(data.classes, selectedId)}</select></div>
+            <div class="form-group col-3"><label class="form-label">Minggu</label><input class="form-control" type="week" id="reportWeek" value="${state.currentWeek}"></div>
+            <div class="form-group col-3"><label class="form-label">Bulan</label><input class="form-control" type="month" id="reportMonth" value="${state.currentMonth}"></div>
+            <div class="col-2" style="display:flex;align-items:end;gap:7px;flex-wrap:wrap"><button class="btn btn-outline-success" data-action="load-weekly-report">Mingguan</button><button class="btn btn-primary" data-action="load-monthly-report">Bulanan</button></div>
+            <div class="form-group col-4"><label class="form-label">Dari tanggal</label><input class="form-control" type="date" id="reportDateFrom" value="${state.currentMonth}-01"></div>
+            <div class="form-group col-4"><label class="form-label">Sampai tanggal</label><input class="form-control" type="date" id="reportDateTo" value="${state.today}"></div>
+            <div class="col-4" style="display:flex;align-items:end"><button class="btn btn-warning" data-action="load-range-report">Tampilkan Rentang Tanggal</button></div>
+          </div>
+        </div></section>
+        <div id="reportResult" style="margin-top:18px">${emptyHtml('Pilih jenis laporan untuk menampilkan data.')}</div>`;
+      await loadWeeklyReport();
+    }
+
+    async function loadWeeklyReport() {
+      const classId = document.getElementById('reportClass').value;
+      const week = document.getElementById('reportWeek').value;
+      try {
+        setLoading(true, 'Menyusun laporan mingguan...');
+        const data = await callServer('report.weekly', { class_id: classId, week: week });
+        state.reportData = { type: 'weekly', data: data };
+        const rows = data.rows.map(function (row) {
+          return `<tr><td>${escapeHtml(row.nis)}</td><td><strong>${escapeHtml(row.name)}</strong></td>${row.statuses.map(function (status) { return '<td class="text-center">' + statusBadge(status) + '</td>'; }).join('')}<td class="text-center">${row.counts.H}</td><td class="text-center">${row.counts.I}</td><td class="text-center">${row.counts.S}</td><td class="text-center">${row.counts.A}</td></tr>`;
+        }).join('');
+        document.getElementById('reportResult').innerHTML = `
+          <section class="card table-card">
+            <div class="card-body" style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap">
+              <div><h2 class="card-title">Rekap Mingguan ${escapeHtml(data.classRow.name)}</h2><p class="card-subtitle">${formatDate(data.start)} s.d. ${formatDate(data.end)}</p></div>
+              <div class="page-actions"><button class="btn btn-outline-success" data-action="download-report-csv">CSV</button><button class="btn btn-success" data-action="download-report-excel">Excel</button></div>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>NIS</th><th>Nama</th>${data.days.map(function (day) { return '<th class="text-center">' + day.dayName + '<br><small>' + day.label + '</small></th>'; }).join('')}<th>H</th><th>I</th><th>S</th><th>A</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="13" class="text-center muted">Belum ada siswa.</td></tr>'}<tr><td></td><td class="fw-bold">TOTAL</td>${data.days.map(function () { return '<td></td>'; }).join('')}<td class="fw-bold text-center">${data.totals.H}</td><td class="fw-bold text-center">${data.totals.I}</td><td class="fw-bold text-center">${data.totals.S}</td><td class="fw-bold text-center">${data.totals.A}</td></tr></tbody></table></div>
+          </section>`;
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function loadMonthlyReport() {
+      const classId = document.getElementById('reportClass').value;
+      const month = document.getElementById('reportMonth').value;
+      try {
+        setLoading(true, 'Menyusun laporan bulanan...');
+        const data = await callServer('report.monthly', { class_id: classId, month: month });
+        state.reportData = { type: 'monthly', data: data };
+        const rows = data.rows.map(function (row) {
+          return `<tr><td>${escapeHtml(row.nis)}</td><td><strong>${escapeHtml(row.name)}</strong></td><td class="text-center">${row.hadir}</td><td class="text-center">${row.izin}</td><td class="text-center">${row.sakit}</td><td class="text-center">${row.alpa}</td><td class="text-center">${row.total_recorded}</td></tr>`;
+        }).join('');
+        document.getElementById('reportResult').innerHTML = `
+          <section class="card table-card">
+            <div class="card-body" style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap">
+              <div><h2 class="card-title">Rekap ${escapeHtml(data.monthName)} — ${escapeHtml(data.classRow.name)}</h2><p class="card-subtitle">${formatDate(data.start)} s.d. ${formatDate(data.end)}</p></div>
+              <div class="page-actions"><button class="btn btn-outline-success" data-action="download-report-csv">CSV</button><button class="btn btn-success" data-action="download-report-excel">Excel</button></div>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>NIS</th><th>Nama</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpa</th><th>Total Tercatat</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="7" class="text-center muted">Belum ada siswa.</td></tr>'}<tr><td></td><td class="fw-bold">TOTAL</td><td class="fw-bold text-center">${data.totals.H}</td><td class="fw-bold text-center">${data.totals.I}</td><td class="fw-bold text-center">${data.totals.S}</td><td class="fw-bold text-center">${data.totals.A}</td><td></td></tr></tbody></table></div>
+          </section>`;
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+
+    async function loadRangeReport() {
+      const classId = document.getElementById('reportClass').value;
+      const dateFrom = document.getElementById('reportDateFrom').value;
+      const dateTo = document.getElementById('reportDateTo').value;
+      if (!dateFrom || !dateTo) { toast('Isi tanggal mulai dan tanggal selesai.', 'error'); return; }
+      if (dateFrom > dateTo) { toast('Tanggal mulai tidak boleh melewati tanggal selesai.', 'error'); return; }
+      try {
+        setLoading(true, 'Menyusun laporan rentang tanggal...');
+        const data = await callServer('report.range', { class_id: classId, date_from: dateFrom, date_to: dateTo });
+        state.reportData = { type: 'range', data: data };
+        const rows = data.rows.map(function (row) {
+          return `<tr><td>${escapeHtml(row.nis)}</td><td><strong>${escapeHtml(row.name)}</strong></td><td class="text-center">${row.hadir}</td><td class="text-center">${row.izin}</td><td class="text-center">${row.sakit}</td><td class="text-center">${row.alpa}</td><td class="text-center">${row.total_recorded}</td></tr>`;
+        }).join('');
+        document.getElementById('reportResult').innerHTML = `
+          <section class="card table-card">
+            <div class="card-body" style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap">
+              <div><h2 class="card-title">Rekap Rentang Tanggal — ${escapeHtml(data.classRow.name)}</h2><p class="card-subtitle">${formatDate(data.start)} s.d. ${formatDate(data.end)}</p></div>
+              <div class="page-actions"><button class="btn btn-outline-success" data-action="download-report-csv">CSV</button><button class="btn btn-success" data-action="download-report-excel">Excel</button></div>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>NIS</th><th>Nama</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpa</th><th>Total Tercatat</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="7" class="text-center muted">Belum ada siswa.</td></tr>'}<tr><td></td><td class="fw-bold">TOTAL</td><td class="fw-bold text-center">${data.totals.H}</td><td class="fw-bold text-center">${data.totals.I}</td><td class="fw-bold text-center">${data.totals.S}</td><td class="fw-bold text-center">${data.totals.A}</td><td></td></tr></tbody></table></div>
+          </section>`;
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function renderAllReports(params) {
+      const dateFrom = params.dateFrom || state.currentMonth + '-01';
+      const dateTo = params.dateTo || state.today;
+      const selectedClassId = params.classId || '';
+      const data = await callServer('report.all', {
+        date_from: dateFrom,
+        date_to: dateTo
+      });
+      state.viewData = data;
+      state.allReportFilters = {
+        dateFrom: data.range.start,
+        dateTo: data.range.end,
+        classId: selectedClassId
+      };
+
+      const recap = buildAllClassesMatrix(data.range, selectedClassId);
+      const classOptionsHtml = data.range.rows.data.map(function (row) {
+        return `<option value="${escapeAttr(row.id)}" ${row.id === selectedClassId ? 'selected' : ''}>${escapeHtml(row.name)}</option>`;
+      }).join('');
+
+      page().innerHTML = `
+        ${pageHeader('Rekap Semua Kelas', 'Kehadiran setiap hari untuk masing-masing kelas dalam satu tabel.', '<button class="btn btn-secondary" data-route="reports">Laporan Per Kelas</button>')}
+        <section class="card all-recap-filter-card">
+          <div class="card-body">
+            <form id="allReportFilter" class="form-grid all-report-filter" data-type="recap">
+              <div class="form-group col-4"><label class="form-label">Tanggal Mulai</label><input class="form-control" type="date" name="dateFrom" value="${data.range.start}" required></div>
+              <div class="form-group col-4"><label class="form-label">Tanggal Selesai</label><input class="form-control" type="date" name="dateTo" value="${data.range.end}" required></div>
+              <div class="form-group col-3"><label class="form-label">Kelas</label><select class="form-select" name="classId"><option value="">Semua Kelas</option>${classOptionsHtml}</select></div>
+              <div class="col-1 all-recap-show"><button class="btn btn-success" type="submit">▾ Tampilkan</button></div>
+            </form>
+          </div>
+        </section>
+
+        <section class="card table-card all-recap-card" style="margin-top:18px">
+          <div class="card-body all-recap-head">
+            <div>
+              <h2 class="card-title">Rekap Kehadiran Semua Kelas</h2>
+              <p class="card-subtitle">${formatDate(data.range.start)} s.d. ${formatDate(data.range.end)}${selectedClassId ? ' • ' + escapeHtml((data.range.rows.data.find(function (row) { return row.id === selectedClassId; }) || {}).name || '') : ' • Semua Kelas'}</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-success" type="button" data-action="download-all-excel" data-type="recap">Ekspor Excel</button>
+            </div>
+          </div>
+          ${allClassesRecapTableHtml(recap)}
+        </section>`;
+    }
+
+    function dateRangeClient(start, end) {
+      const result = [];
+      if (!start || !end) return result;
+      const current = new Date(start + 'T12:00:00');
+      const last = new Date(end + 'T12:00:00');
+      while (current.getTime() <= last.getTime()) {
+        const y = current.getFullYear();
+        const m = String(current.getMonth() + 1).padStart(2, '0');
+        const d = String(current.getDate()).padStart(2, '0');
+        result.push(y + '-' + m + '-' + d);
+        current.setDate(current.getDate() + 1);
+      }
+      return result;
+    }
+
+    function shortDate(value) {
+      const parts = String(value || '').split('-');
+      return parts.length === 3 ? parts[2] + '/' + parts[1] : value;
+    }
+
+    function buildAllClassesMatrix(period, selectedClassId) {
+      const dates = dateRangeClient(period.start, period.end);
+      const allClasses = (period.rows && period.rows.data) ? period.rows.data : [];
+      const classes = selectedClassId
+        ? allClasses.filter(function (row) { return row.id === selectedClassId; })
+        : allClasses.slice();
+      const allowed = new Set(classes.map(function (row) { return row.id; }));
+      const dailyRows = ((period.daily && period.daily.data) || []).filter(function (row) {
+        return allowed.has(row.class_id);
+      });
+      const dailyMap = {};
+      const dayNames = {};
+      dailyRows.forEach(function (row) {
+        dailyMap[row.class_id + '|' + row.date] = row;
+        if (!dayNames[row.date]) dayNames[row.date] = row.day_name;
+      });
+
+      const dayNamesFallback = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      dates.forEach(function (dateText) {
+        if (!dayNames[dateText]) dayNames[dateText] = dayNamesFallback[new Date(dateText + 'T12:00:00').getDay()];
+      });
+
+      const rows = classes.map(function (classRow) {
+        const dayValues = [];
+        const counts = { H: 0, I: 0, S: 0, A: 0, recorded: 0 };
+        dates.forEach(function (dateText) {
+          const day = dailyMap[classRow.id + '|' + dateText] || { H: 0, I: 0, S: 0, A: 0, recorded: 0, unrecorded: Number(classRow.student_count || 0) };
+          dayValues.push(day);
+          counts.H += Number(day.H || 0);
+          counts.I += Number(day.I || 0);
+          counts.S += Number(day.S || 0);
+          counts.A += Number(day.A || 0);
+          counts.recorded += Number(day.recorded || 0);
+        });
+        const denominator = counts.H + counts.I + counts.S + counts.A;
+        return {
+          id: classRow.id,
+          name: classRow.name,
+          teacher_name: classRow.teacher_name || '-',
+          student_count: Number(classRow.student_count || 0),
+          days: dayValues,
+          H: counts.H,
+          I: counts.I,
+          S: counts.S,
+          A: counts.A,
+          recorded: counts.recorded,
+          percentage: denominator > 0 ? (counts.H / denominator) * 100 : null
+        };
+      });
+
+      const dayTotals = dates.map(function (dateText, dayIndex) {
+        return rows.reduce(function (acc, row) {
+          const day = row.days[dayIndex];
+          acc.H += Number(day.H || 0);
+          acc.recorded += Number(day.recorded || 0);
+          return acc;
+        }, { H: 0, recorded: 0 });
+      });
+      const totals = rows.reduce(function (acc, row) {
+        acc.H += row.H;
+        acc.I += row.I;
+        acc.S += row.S;
+        acc.A += row.A;
+        return acc;
+      }, { H: 0, I: 0, S: 0, A: 0 });
+      const denominator = totals.H + totals.I + totals.S + totals.A;
+      totals.percentage = denominator > 0 ? (totals.H / denominator) * 100 : null;
+
+      return { start: period.start, end: period.end, dates: dates, dayNames: dayNames, rows: rows, dayTotals: dayTotals, totals: totals };
+    }
+
+    function percentageText(value) {
+      return value === null || value === undefined ? '-' : Number(value).toFixed(2) + '%';
+    }
+
+    function allClassesRecapTableHtml(recap) {
+      const dateHeaders = recap.dates.map(function (dateText) {
+        return `<th class="text-center all-recap-day"><span>${escapeHtml(recap.dayNames[dateText] || '')}</span><br><small>${shortDate(dateText)}</small></th>`;
+      }).join('');
+      const rows = recap.rows.map(function (row, index) {
+        const dayCells = row.days.map(function (day) {
+          return `<td class="text-center all-recap-number">${Number(day.recorded || 0) > 0 ? Number(day.H || 0) : '<span class="muted">-</span>'}</td>`;
+        }).join('');
+        return `<tr>
+          <td class="text-center">${index + 1}</td>
+          <td class="nowrap"><strong>${escapeHtml(row.name)}</strong></td>
+          <td class="nowrap">${escapeHtml(row.teacher_name)}</td>
+          ${dayCells}
+          <td class="text-center fw-bold">${row.H}</td>
+          <td class="text-center">${row.I}</td>
+          <td class="text-center">${row.S}</td>
+          <td class="text-center">${row.A}</td>
+          <td class="text-center fw-bold all-recap-percent">${percentageText(row.percentage)}</td>
+        </tr>`;
+      }).join('');
+      const totalDayCells = recap.dayTotals.map(function (day) {
+        return `<td class="text-center fw-bold">${day.recorded > 0 ? day.H : '<span class="muted">-</span>'}</td>`;
+      }).join('');
+      const totalLabel = recap.rows.length === 1 ? 'Total Kelas (1 Kelas)' : 'Total Seluruh Kelas (' + recap.rows.length + ' Kelas)';
+
+      return `<div class="table-scroll all-recap-scroll"><table class="all-recap-table">
+        <thead><tr><th class="text-center">No</th><th>Kelas</th><th>Wali Kelas</th>${dateHeaders}<th class="text-center">H</th><th class="text-center">I</th><th class="text-center">S</th><th class="text-center">A</th><th class="text-center">%</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="${8 + recap.dates.length}" class="text-center muted">Belum ada kelas pada filter tersebut.</td></tr>`}
+          ${recap.rows.length ? `<tr class="all-recap-total"><td colspan="3" class="fw-bold">${escapeHtml(totalLabel)}</td>${totalDayCells}<td class="text-center fw-bold">${recap.totals.H}</td><td class="text-center fw-bold">${recap.totals.I}</td><td class="text-center fw-bold">${recap.totals.S}</td><td class="text-center fw-bold">${recap.totals.A}</td><td class="text-center fw-bold all-recap-percent">${percentageText(recap.totals.percentage)}</td></tr>` : ''}
+        </tbody>
+      </table></div>`;
+    }
+
+    async function renderHistory(params) {
+      const payload = {
+        class_id: params.classId || '',
+        date_from: params.dateFrom || '',
+        date_to: params.dateTo || '',
+        status: params.status || ''
+      };
+      const data = await callServer('history', payload);
+      state.viewData = data;
+      const rows = data.rows.map(function (row) {
+        return `<tr><td class="nowrap">${formatDate(row.attendance_date)}</td><td>${escapeHtml(row.class_name)}</td><td>${escapeHtml(row.nis)}</td><td><strong>${escapeHtml(row.student_name)}</strong></td><td>${statusBadge(row.status)}</td><td>${escapeHtml(row.note || '-')}</td><td>${escapeHtml(row.recorder_name || '-')}</td></tr>`;
+      }).join('');
+      page().innerHTML = `
+        ${pageHeader('Riwayat Absensi', 'Telusuri data berdasarkan kelas, tanggal, dan status.')}
+        <section class="card"><div class="card-body">
+          <form id="historyFilter" class="form-grid">
+            <div class="form-group col-3"><label class="form-label">Kelas</label><select class="form-select" name="classId"><option value="">Semua kelas</option>${classOptions(data.classes, data.filters.class_id)}</select></div>
+            <div class="form-group col-3"><label class="form-label">Dari tanggal</label><input class="form-control" type="date" name="dateFrom" value="${data.filters.date_from}"></div>
+            <div class="form-group col-3"><label class="form-label">Sampai tanggal</label><input class="form-control" type="date" name="dateTo" value="${data.filters.date_to}"></div>
+            <div class="form-group col-3"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">Semua</option>${['H','I','S','A'].map(function (s) { return '<option value="' + s + '" ' + (data.filters.status === s ? 'selected' : '') + '>' + STATUS_NAMES[s] + '</option>'; }).join('')}</select></div>
+            <div class="col-12" style="display:flex;gap:8px"><button class="btn btn-primary" type="submit">Terapkan Filter</button><button class="btn btn-secondary" type="button" data-action="reset-history">Reset</button></div>
+          </form>
+        </div></section>
+        <section class="grid grid-4 summary-grid" style="margin-top:18px">
+          ${summaryCard('Hadir', data.summary.H, 'status-h')}${summaryCard('Izin', data.summary.I, 'status-i')}${summaryCard('Sakit', data.summary.S, 'status-s')}${summaryCard('Alpa', data.summary.A, 'status-a')}
+        </section>
+        <section class="card table-card" style="margin-top:18px"><div class="table-scroll"><table><thead><tr><th>Tanggal</th><th>Kelas</th><th>NIS</th><th>Nama</th><th>Status</th><th>Catatan</th><th>Dicatat Oleh</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="text-center muted">Tidak ada data pada filter tersebut.</td></tr>'}</tbody></table></div></section>`;
+      document.getElementById('historyFilter').addEventListener('submit', function (event) {
+        event.preventDefault();
+        navigate('history', formObject(event.currentTarget));
+      });
+    }
+
+    async function renderSettings() {
+      if (state.user.role !== 'admin') throw new Error('Menu ini hanya untuk administrator.');
+      const data = await callServer('settings.get', {});
+      state.viewData = data;
+      page().innerHTML = `
+        ${pageHeader('Pengaturan Sekolah', 'Identitas ini digunakan pada aplikasi dan laporan.')}
+        <section class="card"><div class="card-body">
+          <form id="settingsForm" class="form-grid">
+            <div class="form-group col-6"><label class="form-label">Nama sekolah</label><input class="form-control" name="school_name" value="${escapeAttr(data.settings.school_name || '')}" placeholder="Contoh: SMK Canda Bhirawa Pare"></div>
+            <div class="form-group col-6"><label class="form-label">NPSN</label><input class="form-control" name="npsn" value="${escapeAttr(data.settings.npsn || '')}"></div>
+            <div class="form-group col-6"><label class="form-label">Nama kepala sekolah</label><input class="form-control" name="principal_name" value="${escapeAttr(data.settings.principal_name || '')}"></div>
+            <div class="form-group col-12"><label class="form-label">Alamat sekolah</label><textarea class="form-control" name="school_address">${escapeHtml(data.settings.school_address || '')}</textarea></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Simpan Pengaturan</button></div>
+          </form>
+        </div></section>`;
+      document.getElementById('settingsForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          setLoading(true, 'Menyimpan pengaturan...');
+          const result = await callServer('settings.save', formObject(event.currentTarget));
+          state.settings = result.settings;
+          document.getElementById('brandName').textContent = state.settings.school_name || 'ABSENSI SEKOLAH';
+          toast(result.message, 'success');
+        } catch (error) { toast(error.message, 'error'); }
+        finally { setLoading(false); }
+      });
+    }
+
+    async function renderProfile() {
+      const data = await callServer('profile.get', {});
+      state.viewData = data;
+      page().innerHTML = `
+        ${pageHeader('Profil Akun', 'Perbarui nama, username, atau kata sandi.')}
+        <section class="card"><div class="card-body">
+          <form id="profileForm" class="form-grid">
+            <div class="form-group col-6"><label class="form-label">Nama lengkap</label><input class="form-control" name="full_name" value="${escapeAttr(data.user.full_name)}" required></div>
+            <div class="form-group col-6"><label class="form-label">Username</label><input class="form-control" name="username" value="${escapeAttr(data.user.username)}" required></div>
+            <div class="form-group col-6"><label class="form-label">Kata sandi saat ini</label><input class="form-control" type="password" name="current_password"><span class="form-hint">Wajib diisi hanya saat mengganti kata sandi.</span></div>
+            <div class="form-group col-6"><label class="form-label">Kata sandi baru</label><input class="form-control" type="password" name="new_password" minlength="6"></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Simpan Profil</button></div>
+          </form>
+        </div></section>`;
+      document.getElementById('profileForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          setLoading(true, 'Menyimpan profil...');
+          const result = await callServer('profile.save', formObject(event.currentTarget));
+          state.user = result.user;
+          toast(result.message, 'success');
+          renderShell();
+          await renderProfile();
+        } catch (error) { toast(error.message, 'error'); }
+        finally { setLoading(false); }
+      });
+    }
+
+    function handleGlobalClick(event) {
+      const routeEl = event.target.closest('[data-route]');
+      if (routeEl) {
+        event.preventDefault();
+        const params = {};
+        if (routeEl.dataset.classId) params.classId = routeEl.dataset.classId;
+        navigate(routeEl.dataset.route, params);
+        return;
+      }
+      const actionEl = event.target.closest('[data-action]');
+      if (!actionEl) return;
+      const action = actionEl.dataset.action;
+      const id = actionEl.dataset.id;
+
+      switch (action) {
+        case 'toggle-nav': document.getElementById('navLinks').classList.toggle('open'); break;
+        case 'logout': performLogout(); break;
+        case 'add-class': ensureClassDataThen(function () { openClassModal(null); }); break;
+        case 'edit-class': ensureClassDataThen(function () { openClassModal((state.viewData.classes || []).find(function (row) { return row.id === id; })); }); break;
+        case 'delete-class': deleteClass(id); break;
+        case 'edit-user': openUserEditModal(state.viewData.users.find(function (row) { return row.id === id; })); break;
+        case 'user-password': openPasswordModal(state.viewData.users.find(function (row) { return row.id === id; })); break;
+        case 'delete-user': deleteUser(id); break;
+        case 'import-teachers': importTeachers(); break;
+        case 'download-teacher-template': downloadCsv([['Nama Lengkap','Username','Password','Kelas','Tahun Pelajaran'],['Budi Santoso','budi','rahasia123','VII-B','2026/2027']], 'template_import_wali_kelas.csv'); break;
+        case 'deactivate-student': deactivateStudent(id); break;
+        case 'import-students': importStudents(); break;
+        case 'download-student-template': downloadCsv([['NIS','Nama'],['1006','Fajar Ramadhan']], 'template_import_siswa.csv'); break;
+        case 'mark-all-present': document.querySelectorAll('.status-options input[value="H"]').forEach(function (input) { input.checked = true; }); break;
+        case 'load-weekly-report': loadWeeklyReport(); break;
+        case 'load-monthly-report': loadMonthlyReport(); break;
+        case 'load-range-report': loadRangeReport(); break;
+        case 'download-report-csv': downloadCurrentReport('csv'); break;
+        case 'download-report-excel': downloadCurrentReport('xlsx'); break;
+        case 'download-all-csv': downloadAllReport(actionEl.dataset.type, 'csv'); break;
+        case 'download-all-excel': downloadAllReport(actionEl.dataset.type, 'xlsx'); break;
+        case 'reset-history': navigate('history'); break;
+        case 'close-modal': hideModal(); break;
+      }
+    }
+
+    async function ensureClassDataThen(callback) {
+      if (state.viewData && state.viewData.classes && state.viewData.teachers) { callback(); return; }
+      try {
+        setLoading(true);
+        state.viewData = await callServer('classes.list', {});
+        callback();
+      } catch (error) { toast(error.message, 'error'); }
+      finally { setLoading(false); }
+    }
+
+    async function performLogout() {
+      try { await callServer('logout', {}); } catch (ignore) {}
+      clearSession();
+      location.hash = '';
+      renderLogin();
+      toast('Anda telah keluar dari aplikasi.', 'info');
+    }
+
+    function showModal(options) {
+      document.getElementById('modalRoot').innerHTML = `
+        <div class="modal-backdrop" id="modalBackdrop">
+          <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-head"><h2>${escapeHtml(options.title)}</h2><button class="icon-button" type="button" data-action="close-modal">×</button></div>
+            <form id="modalForm"><div class="modal-body">${options.html}</div><div class="modal-foot"><button class="btn btn-secondary" type="button" data-action="close-modal">Batal</button><button class="btn btn-primary" type="submit">${escapeHtml(options.submitText || 'Simpan')}</button></div></form>
+          </div>
+        </div>`;
+      document.getElementById('modalForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          setLoading(true, 'Menyimpan data...');
+          await options.onSubmit(event.currentTarget);
+        } catch (error) { toast(error.message, 'error'); }
+        finally { setLoading(false); }
+      });
+    }
+
+    function hideModal() { document.getElementById('modalRoot').innerHTML = ''; }
+    function closeMobileNav() { const nav = document.getElementById('navLinks'); if (nav) nav.classList.remove('open'); }
+
+    function pageHeader(title, subtitle, actions) {
+      return `<header class="page-header"><div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle || '')}</p></div>${actions ? '<div class="page-actions">' + actions + '</div>' : ''}</header>`;
+    }
+    function summaryCard(label, value, css) { return `<article class="card summary-card ${css}"><span>${escapeHtml(label)}</span><strong>${Number(value || 0)}</strong></article>`; }
+    function quickCard(icon, title, subtitle, route) { return `<a class="card quick-card" href="#${route}" data-route="${route}"><span class="quick-icon">${icon}</span><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></a>`; }
+    function emptyHtml(message) { return `<div class="empty-state"><div class="icon">📭</div><strong>${escapeHtml(message)}</strong></div>`; }
+    function renderError(message) { page().innerHTML = emptyHtml(message || 'Terjadi kesalahan.'); }
+
+    function classOptions(classes, selectedId) {
+      return classes.map(function (item) { return `<option value="${item.id}" ${String(selectedId) === String(item.id) ? 'selected' : ''}>${escapeHtml(item.name)} — ${escapeHtml(item.academic_year)}</option>`; }).join('');
+    }
+
+    function statusBadge(status) {
+      if (!status) return '<span class="report-status badge-empty">-</span>';
+      return `<span class="report-status badge-${status.toLowerCase()}">${escapeHtml(status)}</span>`;
+    }
+
+    function formObject(form) {
+      const result = {};
+      new FormData(form).forEach(function (value, key) { result[key] = String(value); });
+      return result;
+    }
+
+    function ensureXlsxLoaded() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (xlsxLoadPromise) return xlsxLoadPromise;
+
+      xlsxLoadPromise = new Promise(function (resolve, reject) {
+        const script = document.createElement('script');
+        script.src = XLSX_LIBRARY_URL;
+        script.async = true;
+        script.onload = function () {
+          if (window.XLSX) resolve(window.XLSX);
+          else reject(new Error('Library Excel gagal diinisialisasi.'));
+        };
+        script.onerror = function () {
+          xlsxLoadPromise = null;
+          reject(new Error('Library Excel gagal dimuat. Periksa koneksi internet lalu coba lagi.'));
+        };
+        document.head.appendChild(script);
+      });
+      return xlsxLoadPromise;
+    }
+
+    async function parseTableFile(file) {
+      await ensureXlsxLoaded();
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      if (!workbook.SheetNames.length) throw new Error('File tidak memiliki lembar data.');
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+      if (!rows.length) throw new Error('File kosong atau tidak memiliki baris data.');
+      return rows;
+    }
+
+    function buildCurrentReportExport() {
+      if (!state.reportData) return null;
+      const info = state.reportData;
+      const data = info.data;
+      let rows;
+      let filename;
+      let sheetName;
+      if (info.type === 'weekly') {
+        rows = [
+          ['REKAP ABSENSI MINGGUAN'],
+          ['Kelas', data.classRow.name],
+          ['Tahun Pelajaran', data.classRow.academic_year],
+          ['Periode', formatDate(data.start) + ' s.d. ' + formatDate(data.end)],
+          [],
+          ['NIS','Nama'].concat(data.days.map(function (day) { return day.dayName + ' ' + day.label; })).concat(['H','I','S','A'])
+        ];
+        data.rows.forEach(function (row) { rows.push([row.nis, row.name].concat(row.statuses).concat([row.counts.H,row.counts.I,row.counts.S,row.counts.A])); });
+        rows.push([]); rows.push(['','TOTAL'].concat(data.days.map(function () { return ''; })).concat([data.totals.H,data.totals.I,data.totals.S,data.totals.A]));
+        filename = 'rekap_' + safeFilename(data.classRow.name) + '_' + data.week;
+        sheetName = 'Rekap Mingguan';
+      } else {
+        const isRange = info.type === 'range';
+        rows = [
+          [isRange ? 'REKAP ABSENSI RENTANG TANGGAL' : 'REKAP ABSENSI BULANAN'],
+          ['Kelas', data.classRow.name],
+          ['Tahun Pelajaran', data.classRow.academic_year],
+          ['Periode', formatDate(data.start) + ' s.d. ' + formatDate(data.end)],
+          [],
+          ['NIS','Nama','Hadir','Izin','Sakit','Alpa','Total Tercatat']
+        ];
+        data.rows.forEach(function (row) { rows.push([row.nis,row.name,row.hadir,row.izin,row.sakit,row.alpa,row.total_recorded]); });
+        rows.push([]); rows.push(['','TOTAL',data.totals.H,data.totals.I,data.totals.S,data.totals.A,'']);
+        filename = isRange
+          ? 'rekap_rentang_' + safeFilename(data.classRow.name) + '_' + data.start + '_sd_' + data.end
+          : 'rekap_bulanan_' + safeFilename(data.classRow.name) + '_' + data.month;
+        sheetName = isRange ? 'Rentang Tanggal' : 'Rekap Bulanan';
+      }
+      return { rows: rows, filename: filename, sheetName: sheetName };
+    }
+
+    async function downloadCurrentReport(format) {
+      const report = buildCurrentReportExport();
+      if (!report) return;
+      if (format === 'xlsx') await downloadExcel(report.rows, report.filename + '.xlsx', report.sheetName);
+      else downloadCsv(report.rows, report.filename + '.csv');
+    }
+
+    function buildAllReportExport(type) {
+      if (!state.viewData || !state.viewData.range) return null;
+      const filters = state.allReportFilters || { classId: '' };
+      const period = state.viewData.range;
+      const recap = buildAllClassesMatrix(period, filters.classId || '');
+      const selectedClass = filters.classId
+        ? ((period.rows.data || []).find(function (row) { return row.id === filters.classId; }) || {}).name || 'Kelas terpilih'
+        : 'Semua Kelas';
+
+      const headers = ['No.','Kelas','Wali Kelas'].concat(recap.dates.map(function (dateText) {
+        return (recap.dayNames[dateText] || '') + ' ' + shortDate(dateText);
+      })).concat(['H','I','S','A','%']);
+      const rows = [
+        ['REKAP KEHADIRAN SEMUA KELAS'],
+        ['Periode', formatDate(recap.start) + ' s.d. ' + formatDate(recap.end)],
+        ['Filter Kelas', selectedClass],
+        [],
+        headers
+      ];
+
+      recap.rows.forEach(function (row, index) {
+        const daily = row.days.map(function (day) {
+          return Number(day.recorded || 0) > 0 ? Number(day.H || 0) : '-';
+        });
+        rows.push([index + 1, row.name, row.teacher_name].concat(daily).concat([
+          row.H, row.I, row.S, row.A, row.percentage === null ? '' : row.percentage / 100
+        ]));
+      });
+
+      if (recap.rows.length) {
+        const dayTotals = recap.dayTotals.map(function (day) {
+          return day.recorded > 0 ? day.H : '-';
+        });
+        const label = recap.rows.length === 1 ? 'TOTAL KELAS' : 'TOTAL SELURUH KELAS (' + recap.rows.length + ' KELAS)';
+        rows.push([]);
+        rows.push(['', label, ''].concat(dayTotals).concat([
+          recap.totals.H,
+          recap.totals.I,
+          recap.totals.S,
+          recap.totals.A,
+          recap.totals.percentage === null ? '' : recap.totals.percentage / 100
+        ]));
+      }
+
+      return {
+        rows: rows,
+        filename: 'rekap_semua_kelas_' + recap.start + '_sd_' + recap.end + (filters.classId ? '_' + safeFilename(selectedClass) : ''),
+        sheetName: 'Rekap Semua Kelas',
+        excelOptions: {
+          widths: [6, 18, 28].concat(recap.dates.map(function () { return 12; })).concat([8, 8, 8, 8, 11]),
+          mergeTitle: true,
+          headerRow: 5,
+          filterEndRow: 5 + recap.rows.length,
+          percentColumn: 8 + recap.dates.length
+        }
+      };
+    }
+
+    async function downloadAllReport(type, format) {
+      const report = buildAllReportExport(type);
+      if (!report) return;
+      if (format === 'xlsx') await downloadExcel(report.rows, report.filename + '.xlsx', report.sheetName, report.excelOptions);
+      else downloadCsv(report.rows, report.filename + '.csv');
+    }
+
+    async function downloadExcel(rows, filename, sheetName, options) {
+      try {
+        setLoading(true, 'Menyiapkan file Excel...');
+        await ensureXlsxLoaded();
+        options = options || {};
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        const columnCount = rows.reduce(function (max, row) { return Math.max(max, row.length); }, 0);
+        worksheet['!cols'] = options.widths
+          ? options.widths.map(function (width) { return { wch: width }; })
+          : Array.from({ length: columnCount }, function (_, index) {
+              const maxLength = rows.reduce(function (max, row) {
+                const value = row[index] === undefined || row[index] === null ? '' : String(row[index]);
+                return Math.max(max, value.length);
+              }, index === 1 ? 18 : 10);
+              return { wch: Math.min(Math.max(maxLength + 2, 10), 32) };
+            });
+
+        if (options.mergeTitle && columnCount > 1) {
+          worksheet['!merges'] = worksheet['!merges'] || [];
+          worksheet['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: columnCount - 1 } });
+        }
+        if (options.headerRow && rows.length >= options.headerRow) {
+          const headerIndex = options.headerRow - 1;
+          const lastDataRow = options.filterEndRow ? Math.max(headerIndex, options.filterEndRow - 1) : Math.max(headerIndex, rows.length - 1);
+          worksheet['!autofilter'] = {
+            ref: XLSX.utils.encode_range({ s: { r: headerIndex, c: 0 }, e: { r: lastDataRow, c: columnCount - 1 } })
+          };
+        }
+        if (options.percentColumn) {
+          const percentColIndex = options.percentColumn - 1;
+          for (let rowIndex = (options.headerRow || 1); rowIndex < rows.length; rowIndex += 1) {
+            const ref = XLSX.utils.encode_cell({ r: rowIndex, c: percentColIndex });
+            if (worksheet[ref] && typeof worksheet[ref].v === 'number') worksheet[ref].z = '0.00%';
+          }
+        }
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, String(sheetName || 'Laporan').slice(0, 31));
+        XLSX.writeFile(workbook, filename);
+      } catch (error) {
+        toast(error.message || 'File Excel gagal dibuat.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function downloadCsv(rows, filename) {
+      const text = rows.map(function (row) {
+        return row.map(function (value) {
+          const cell = value === undefined || value === null ? '' : String(value);
+          return /[",\n]/.test(cell) ? '"' + cell.replace(/"/g, '""') + '"' : cell;
+        }).join(',');
+      }).join('\r\n');
+      const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    document.addEventListener('submit', function (event) {
+      const form = event.target.closest('.all-report-filter');
+      if (!form) return;
+      event.preventDefault();
+      const formData = new FormData(form);
+      const dateFrom = formData.get('dateFrom');
+      const dateTo = formData.get('dateTo');
+      const classId = formData.get('classId') || '';
+      if (!dateFrom || !dateTo) { toast('Isi tanggal mulai dan tanggal selesai.', 'error'); return; }
+      if (dateFrom > dateTo) { toast('Tanggal mulai tidak boleh melewati tanggal selesai.', 'error'); return; }
+      navigate('all-reports', { dateFrom: dateFrom, dateTo: dateTo, classId: classId });
+    });
+
+    function formatDate(value) {
+      if (!value) return '-';
+      const parts = String(value).split('-');
+      return parts.length === 3 ? parts[2] + '-' + parts[1] + '-' + parts[0] : value;
+    }
+    function safeFilename(value) { return String(value || '').replace(/[\\/:*?"<>|\s]+/g, '_'); }
+    function escapeHtml(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>'"]/g, function (char) { return ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[char]; }); }
+    function escapeAttr(value) { return escapeHtml(value); }
+
+    function setLoading(show, text) {
+      const loading = document.getElementById('loading');
+      document.getElementById('loadingText').textContent = text || 'Memuat data...';
+      loading.classList.toggle('hidden', !show);
+    }
+
+    function toast(message, type) {
+      if (!message) return;
+      const node = document.createElement('div');
+      node.className = 'toast toast-' + (type || 'info');
+      node.textContent = message;
+      document.getElementById('toastStack').appendChild(node);
+      setTimeout(function () { node.remove(); }, 4200);
+    }
+  </script>
+</body>
+</html>
